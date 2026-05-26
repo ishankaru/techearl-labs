@@ -1,0 +1,40 @@
+services:
+
+  # ---- SQL Injection ----
+
+  sqli-basic:
+    build: ./sql-injection/sqli-basic
+    container_name: sqli-basic
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      sqli-basic-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: sqli-basic-db
+      DB_USER: webapp
+      DB_PASS: webapp123
+      DB_NAME: shop
+    volumes:
+      - sqli-basic-webroot:/var/www/html
+
+  sqli-basic-db:
+    image: mysql:8.0
+    container_name: sqli-basic-db
+    command:
+      - --secure-file-priv=
+      - --local-infile=1
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: shop
+    volumes:
+      - ./sql-injection/sqli-basic/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+      - sqli-basic-webroot:/var/www/html
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  sqli-basic-webroot:

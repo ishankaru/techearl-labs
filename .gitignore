@@ -1,0 +1,18 @@
+.DS_Store
+*.log
+*.tmp
+.env
+.env.local
+
+# Docker
+docker-compose.override.yml
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Per-lab build artefacts
+**/data/
+**/uploads/
