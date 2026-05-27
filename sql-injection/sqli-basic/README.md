@@ -8,7 +8,7 @@ The companion lab for [TechEarl's sqlmap tutorial](https://techearl.com/sqlmap-t
 |---|---|---|---|
 | `/product?id=1` | GET | `id` | Numeric concat into `SELECT ... WHERE id = $id` (3 columns). Boolean, error, time, UNION all work |
 | `/search.php?q=foo` | GET | `q` | String concat into a `LIKE` clause |
-| `/login` (POST) | POST | `username`, `password` | Both fields concatenated into `SELECT ... WHERE username = '$u' AND password = '$p'`. Login-bypass with `' OR '1'='1` |
+| `/login.php` (POST) | POST | `username`, `password` | Both fields concatenated into `SELECT ... WHERE username = '$u' AND password = '$p'`. Login-bypass with `' OR '1'='1` |
 | `/track?ref=<v>` | GET | `ref` | Parameterised (safe entry); intended as the second-order target once the read-back endpoint is added |
 | `/track?page=<p>` | GET | `User-Agent` header, `X-Tenant-Id` header, `page` query | All three concatenated into an `INSERT` against `page_views`. Mirrors the analytics-logger anti-pattern |
 
