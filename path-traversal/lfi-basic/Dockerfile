@@ -28,16 +28,27 @@ RUN { \
       echo 'error_reporting=E_ALL'; \
     } > /usr/local/etc/php/conf.d/zz-lfi-lab.ini
 
-# Apache access log readability. Debian's default writes /var/log/apache2/access.log
-# as root:adm 0640. The www-data process that handles PHP requests is NOT in
-# the adm group, so include('/var/log/apache2/access.log') would fail with
-# permission-denied and the log-poisoning exploit chain (Step 4 in the README)
-# would not work. Add www-data to adm so the group-read bit applies.
+# Apache access log readability. Two problems to solve before the log-poisoning
+# exploit chain (Step 4 in the README) can fire:
 #
-# This mirrors a common real-world misconfiguration: shipping a containerised
-# PHP app whose www-data has been quietly granted log-read for a "debug
-# dashboard" that nobody removed before production.
-RUN usermod -aG adm www-data
+# 1. The base php:8.2-apache image symlinks /var/log/apache2/access.log to
+#    /dev/stdout so docker logs picks up Apache's traffic. include()-ing a
+#    character device does not read the log lines back as PHP source. The
+#    symlink is replaced here with a real file so the include() of the log
+#    parses and executes the injected <?php ... ?> tag.
+#
+# 2. Debian's apache2 writes the file as root:adm 0640. The www-data process
+#    that handles PHP requests is NOT in the adm group, so include() of the
+#    log would fail with permission-denied even with a real file. www-data is
+#    added to adm so the group-read bit applies. This mirrors the common
+#    real-world misconfiguration: shipping a containerised PHP app whose
+#    www-data has been quietly granted log-read for a "debug dashboard"
+#    that nobody removed before production.
+RUN rm -f /var/log/apache2/access.log /var/log/apache2/error.log \
+    && touch /var/log/apache2/access.log /var/log/apache2/error.log \
+    && chown root:adm /var/log/apache2/access.log /var/log/apache2/error.log \
+    && chmod 0640 /var/log/apache2/access.log /var/log/apache2/error.log \
+    && usermod -aG adm www-data
 
 # Drop the vulnerable app into the standard Apache docroot.
 COPY public/ /var/www/html/

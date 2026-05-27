@@ -12,25 +12,28 @@ require __DIR__ . '/shared/layout.php';
  *
  * That assumption is wrong twice:
  *
- *   1. php://filter ignores the trailing string after the resource name, so
- *      ?page=php://filter/convert.base64-encode/resource=index reads index.php
- *      as base64 and the appended ".php" simply becomes part of the wrapper
- *      argument string the engine discards.
+ *   1. php://filter reads the include path as a wrapper invocation. With
+ *      ?page=php://filter/convert.base64-encode/resource=pages/about the
+ *      engine base64-encodes pages/about.php's source. The appended .php
+ *      ends up as part of the resource= argument and is treated as a
+ *      regular file path by the wrapper.
  *
- *   2. php://input reads the POST body as if it were PHP source. With
- *      allow_url_include=On (set in the lab's php.ini) the engine runs that
- *      body, and again the trailing ".php" is irrelevant to the wrapper.
+ *   2. php://input technically does NOT match here. The PHP input wrapper
+ *      compares the path string literally and "php://input.php" is not
+ *      recognised, so the include falls through to "file not found". The
+ *      RCE-via-POST-body chain therefore runs against view-raw.php instead.
+ *      See README, scenario 3.
  *
  * No sanitisation. No allow-list. No realpath() check. No basename() strip.
  * Exactly the shape of every "rendered partial" anti-pattern that ships in
  * production PHP codebases.
  */
-$page = $_GET['page'] ?? 'about';
+$page = $_GET['page'] ?? 'pages/about';
 
 layout_open('view.php');
 echo '<h1>view.php</h1>';
-echo '<p><small class="note">Including <code>pages/' . h($page) . '.php</code></small></p>';
+echo '<p><small class="note">Including <code>' . h($page) . '.php</code></small></p>';
 echo '<div class="panel">';
-include 'pages/' . $page . '.php';
+include $page . '.php';
 echo '</div>';
 layout_close();

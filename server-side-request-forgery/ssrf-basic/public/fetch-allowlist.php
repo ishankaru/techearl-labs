@@ -2,28 +2,27 @@
 require __DIR__ . '/shared/layout.php';
 
 /*
- * Naive-allowlist SSRF endpoint. The "validation" extracts the host with
- * parse_url() and compares against a hard-coded allowlist. This is the
- * realistic broken pattern, and the bypass is the userinfo trick:
+ * Naive-allowlist SSRF endpoint. The "validation" is a substring check: if
+ * the URL string contains 'example.com' anywhere, the fetch is allowed. This
+ * is the textbook broken-allowlist pattern, the kind of code reviewers find
+ * grepping for "allowlist" / "whitelist" in PHP apps every day.
  *
- *     http://example.com@ssrf-basic-internal/
+ * Bypass (works in-lab):
  *
- * parse_url() returns 'example.com' as the host (because the part before '@'
- * is the userinfo component, and parse_url surfaces only the segment
- * immediately after it as PHP_URL_HOST when the URL is written that way).
- * file_get_contents and curl, however, send the request to the real
- * authority, which is ssrf-basic-internal. Allowlist passes; fetch lands on
- * the internal target.
+ *     http://ssrf-basic-internal/?fake=example.com
  *
- * Other realistic bypasses that also work against this code:
- *   - DNS rebinding (host resolves to allowed IP on first lookup, internal IP
- *     on second). Not demonstrated in-lab, requires an external DNS server.
- *   - Open redirect on the allowlisted host (allowlist sees example.com,
- *     fetcher follows the 302 to anywhere). Try pointing at any open redirect
- *     you control.
+ * strpos() finds 'example.com' in the query string. Allowlist passes.
+ * file_get_contents follows the actual authority and fetches
+ * ssrf-basic-internal. The "allowed" string never had any positional
+ * meaning, the developer just checked it was present somewhere.
+ *
+ * Other realistic bypasses that also work against substring checks:
+ *   - http://example.com.attacker.tld/  (registerable subdomain shape)
+ *   - http://attacker.tld/example.com   (path-only)
+ *   - http://example.com@attacker.tld/  (userinfo trick; some validators
+ *     extract host correctly but the developer here never bothered to
+ *     parse, they just grepped).
  */
-
-const ALLOWED_HOSTS = ['example.com', 'api.example.com'];
 
 $url = $_GET['url'] ?? '';
 $body = null;
@@ -31,9 +30,7 @@ $error = null;
 $rejected = false;
 
 if ($url !== '') {
-    $parsed = parse_url($url);
-    $host = $parsed['host'] ?? '';
-    if (!in_array(strtolower($host), ALLOWED_HOSTS, true)) {
+    if (strpos($url, 'example.com') === false) {
         $rejected = true;
     } else {
         $body = @file_get_contents($url);
@@ -46,7 +43,7 @@ if ($url !== '') {
 layout_open('Allowlist Demo');
 ?>
 <h1>URL preview (allowlist)</h1>
-<p>Same fetcher as <a href="/fetch.php">/fetch.php</a>, but the URL host is checked against an allowlist before fetching. Allowed hosts: <code>example.com</code>, <code>api.example.com</code>.</p>
+<p>Same fetcher as <a href="/fetch.php">/fetch.php</a>, but URLs are filtered through a substring check: the URL must contain the string <code>example.com</code> somewhere.</p>
 
 <form method="get" action="/fetch-allowlist.php">
   <label for="url">URL to fetch</label>
@@ -57,7 +54,7 @@ layout_open('Allowlist Demo');
 <?php if ($url !== ''): ?>
   <h2>Result</h2>
   <?php if ($rejected): ?>
-    <div class="alert">Host not in allowlist. Parsed host: <code><?= h(parse_url($url, PHP_URL_HOST) ?? '') ?></code></div>
+    <div class="alert">URL does not contain an allowed domain.</div>
   <?php elseif ($error !== null): ?>
     <div class="alert"><?= h($error) ?></div>
   <?php else: ?>

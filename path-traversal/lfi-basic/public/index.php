@@ -9,7 +9,7 @@ layout_open('lfi-basic');
 <div class="panel">
   <h2>/view.php</h2>
   <p>Includes a page from <code>pages/</code>, appending <code>.php</code> to the requested name.</p>
-  <p>Intended use: <a href="/view.php?page=about">/view.php?page=about</a>, <a href="/view.php?page=contact">/view.php?page=contact</a></p>
+  <p>Intended use: <a href="/view.php?page=pages/about">/view.php?page=pages/about</a>, <a href="/view.php?page=pages/contact">/view.php?page=pages/contact</a></p>
   <p>The fact that <code>.php</code> is appended blocks the textbook <code>/etc/passwd</code> read, but does not block the <code>php://filter</code> source-disclosure trick or the <code>php://input</code> RCE chain (both wrappers ignore any trailing suffix).</p>
 </div>
 

