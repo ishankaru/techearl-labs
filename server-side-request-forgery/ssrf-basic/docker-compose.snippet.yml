@@ -1,0 +1,33 @@
+# Drop this block into the services: map in the root docker-compose.yml.
+# Three containers:
+#   - ssrf-basic            vulnerable public-facing app (port 8082 on host)
+#   - ssrf-basic-internal   mock internal admin service (no published port)
+#   - ssrf-basic-metadata   mock AWS IMDSv1            (no published port)
+#
+# The two backend services intentionally have NO ports: block. They are
+# reachable only from inside the Docker network, which is the entire point
+# of the SSRF demo. ssrf-basic can hit them; you (on the host) cannot,
+# except by routing the request through the SSRF in ssrf-basic.
+
+  # ---- Server-Side Request Forgery ----
+
+  ssrf-basic:
+    build: ./server-side-request-forgery/ssrf-basic
+    container_name: ssrf-basic
+    ports:
+      - "127.0.0.1:8082:80"
+    depends_on:
+      - ssrf-basic-internal
+      - ssrf-basic-metadata
+
+  ssrf-basic-internal:
+    build: ./server-side-request-forgery/ssrf-basic/internal
+    container_name: ssrf-basic-internal
+    # No ports: block. Reachable only on the Docker network as
+    # http://ssrf-basic-internal/ from sibling containers.
+
+  ssrf-basic-metadata:
+    build: ./server-side-request-forgery/ssrf-basic/metadata
+    container_name: ssrf-basic-metadata
+    # No ports: block. Mocks AWS IMDSv1; real IMDS is at 169.254.169.254.
+    # Reachable only on the Docker network as http://ssrf-basic-metadata/.

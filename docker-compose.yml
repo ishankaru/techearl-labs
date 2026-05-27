@@ -36,5 +36,98 @@ services:
       timeout: 3s
       retries: 20
 
+  # ---- Cross-Site Scripting ----
+
+  xss-basic:
+    build: ./cross-site-scripting/xss-basic
+    container_name: xss-basic
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      xss-basic-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: xss-basic-db
+      DB_USER: webapp
+      DB_PASS: webapp123
+      DB_NAME: xss_lab
+    volumes:
+      - xss-basic-webroot:/var/www/html
+
+  xss-basic-db:
+    image: mysql:8.0
+    container_name: xss-basic-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: xss_lab
+    volumes:
+      - ./cross-site-scripting/xss-basic/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # ---- Server-Side Request Forgery ----
+
+  ssrf-basic:
+    build: ./server-side-request-forgery/ssrf-basic
+    container_name: ssrf-basic
+    ports:
+      - "127.0.0.1:8082:80"
+    depends_on:
+      - ssrf-basic-internal
+      - ssrf-basic-metadata
+
+  ssrf-basic-internal:
+    build: ./server-side-request-forgery/ssrf-basic/internal
+    container_name: ssrf-basic-internal
+
+  ssrf-basic-metadata:
+    build: ./server-side-request-forgery/ssrf-basic/metadata
+    container_name: ssrf-basic-metadata
+
+  # ---- File Upload ----
+
+  upload-basic:
+    build: ./file-upload/upload-basic
+    container_name: upload-basic
+    ports:
+      - "127.0.0.1:8083:80"
+    volumes:
+      - upload-basic-webroot:/var/www/html
+
+  # ---- Path Traversal / LFI ----
+
+  lfi-basic:
+    build: ./path-traversal/lfi-basic
+    container_name: lfi-basic
+    ports:
+      - "127.0.0.1:8084:80"
+
+  # ---- Remote Code Execution ----
+
+  rce-basic:
+    build: ./remote-code-execution/rce-basic
+    container_name: rce-basic
+    ports:
+      - "127.0.0.1:8085:80"
+
+  # ---- XML External Entity ----
+
+  xxe-basic:
+    build: ./xml-external-entity/xxe-basic
+    container_name: xxe-basic
+    ports:
+      - "127.0.0.1:8086:80"
+    depends_on:
+      - xxe-basic-collab
+
+  xxe-basic-collab:
+    build: ./xml-external-entity/xxe-basic-collab
+    container_name: xxe-basic-collab
+
 volumes:
   sqli-basic-webroot:
+  xss-basic-webroot:
+  upload-basic-webroot:

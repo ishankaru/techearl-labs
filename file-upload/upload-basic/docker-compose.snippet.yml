@@ -1,0 +1,21 @@
+# Paste this block into the `services:` section of the root
+# techearl-labs/docker-compose.yml. Volumes block at the bottom needs the
+# `upload-basic-webroot` entry added too.
+
+  # ---- File Upload ----
+
+  upload-basic:
+    build: ./file-upload/upload-basic
+    container_name: upload-basic
+    ports:
+      - "127.0.0.1:8083:80"
+    volumes:
+      # Named volume so uploaded files persist between `docker compose up`
+      # and `docker compose stop`. Run `docker compose down -v` to wipe the
+      # uploads directory back to its initial empty state.
+      - upload-basic-webroot:/var/www/html
+
+# Append to the top-level `volumes:` block:
+#
+# volumes:
+#   upload-basic-webroot:

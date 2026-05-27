@@ -1,0 +1,27 @@
+# Merge these two service blocks into the root docker-compose.yml under
+# the existing top-level `services:` key. Do NOT replace the root file.
+#
+# The collaborator service intentionally has no `ports:` mapping. It is
+# only reachable from sibling containers on the default Docker network,
+# which is what makes the blind-XXE scenario realistic: the lab issues
+# an outbound HTTP request to xxe-basic-collab and the exfiltrated data
+# appears in `docker compose logs xxe-basic-collab` without ever
+# crossing the host network.
+
+services:
+
+  # ---- XML External Entity ----
+
+  xxe-basic:
+    build: ./xml-external-entity/xxe-basic
+    container_name: xxe-basic
+    ports:
+      - "127.0.0.1:8086:80"
+    depends_on:
+      - xxe-basic-collab
+
+  xxe-basic-collab:
+    build: ./xml-external-entity/xxe-basic-collab
+    container_name: xxe-basic-collab
+    # No ports: stanza on purpose. Tail the collaborator with
+    #   docker compose logs -f xxe-basic-collab

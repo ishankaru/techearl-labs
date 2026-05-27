@@ -1,0 +1,35 @@
+  # ---- Cross-Site Scripting ----
+
+  xss-basic:
+    build: ./cross-site-scripting/xss-basic
+    container_name: xss-basic
+    ports:
+      - "127.0.0.1:8081:80"
+    depends_on:
+      xss-basic-db:
+        condition: service_healthy
+    environment:
+      DB_HOST: xss-basic-db
+      DB_USER: webapp
+      DB_PASS: webapp123
+      DB_NAME: xss_lab
+    volumes:
+      - xss-basic-webroot:/var/www/html
+
+  xss-basic-db:
+    image: mysql:8.0
+    container_name: xss-basic-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: xss_lab
+    volumes:
+      - ./cross-site-scripting/xss-basic/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+# Add to the top-level `volumes:` block at the bottom of docker-compose.yml:
+#
+#   xss-basic-webroot:

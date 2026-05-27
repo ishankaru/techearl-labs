@@ -1,0 +1,8 @@
+# No URL rewriting is needed for the XSS lab, every endpoint is a real .php
+# file. This file is here only to flip AllowOverride on for the docroot in
+# case future endpoints want friendly URLs.
+RewriteEngine On
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]

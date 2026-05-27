@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Mock IMDS</title></head>
+<body>
+  <h1>Mock AWS IMDSv1</h1>
+  <p>This container simulates the EC2 instance metadata service. Real IMDS is at <code>http://169.254.169.254/</code>; this mock serves the same paths at <code>http://ssrf-basic-metadata/</code> because Docker cannot bind to link-local addresses.</p>
+  <p>Try: <a href="/latest/meta-data/iam/security-credentials/role-name">/latest/meta-data/iam/security-credentials/role-name</a></p>
+</body>
+</html>

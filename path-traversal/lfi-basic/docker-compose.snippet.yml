@@ -1,0 +1,11 @@
+# Snippet for the root docker-compose.yml. Append the service block below
+# under the existing `services:` key. Do not duplicate the `services:`
+# header when merging.
+
+  # ---- Path Traversal / LFI ----
+
+  lfi-basic:
+    build: ./path-traversal/lfi-basic
+    container_name: lfi-basic
+    ports:
+      - "127.0.0.1:8084:80"

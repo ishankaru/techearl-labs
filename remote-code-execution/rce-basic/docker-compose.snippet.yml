@@ -1,0 +1,11 @@
+# Snippet for the rce-basic lab. Merge into the root docker-compose.yml under
+# `services:` when wiring this lab into the monorepo. No DB, no volumes, no
+# depends_on. The lab is a single PHP container.
+
+  # ---- Remote Code Execution ----
+
+  rce-basic:
+    build: ./remote-code-execution/rce-basic
+    container_name: rce-basic
+    ports:
+      - "127.0.0.1:8085:80"
