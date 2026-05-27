@@ -35,8 +35,7 @@ CREATE TABLE users (
   username VARCHAR(50) UNIQUE NOT NULL,
   password VARCHAR(60) NOT NULL,
   email VARCHAR(100) NOT NULL,
-  is_admin TINYINT(1) NOT NULL DEFAULT 0,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_admin TINYINT(1) NOT NULL DEFAULT 0
 );
 
 INSERT INTO users (username, password, email, is_admin) VALUES

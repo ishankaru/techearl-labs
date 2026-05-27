@@ -6,7 +6,16 @@
  * The connection itself is intentional: every other vulnerable file in this
  * lab uses string-concatenated queries against this handle to demonstrate
  * SQL injection.
+ *
+ * mysqli error reporting is forced to OFF here. PHP 8.x defaults to
+ * MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT which throws mysqli_sql_exception
+ * on every error, so $conn->query() never returns false and the friendly
+ * error-display branch in product.php / login.php / search.php would never
+ * fire. Real-world apps that ship error-based SQLi typically have
+ * display_errors on AND the legacy error-return mysqli behaviour, so this
+ * matches the realistic vulnerable shape the article exploits.
  */
+mysqli_report(MYSQLI_REPORT_OFF);
 
 function db(): mysqli {
     static $conn = null;

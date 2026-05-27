@@ -1,0 +1,11 @@
+# Friendly URLs for /product and /track without the .php extension. Real files
+# (search.php, login.php) still resolve normally.
+RewriteEngine On
+
+# Skip the rewrite if the request maps to an existing file or directory.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# /product, /product/, /track, /track/ -> index.php (which inspects PATH_INFO)
+RewriteRule ^(product|track)/?$ index.php [QSA,L]
