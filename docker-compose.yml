@@ -127,6 +127,56 @@ services:
     build: ./xml-external-entity/xxe-basic-collab
     container_name: xxe-basic-collab
 
+  # ---- Insecure Deserialization ----
+
+  deser-basic:
+    build: ./insecure-deserialization/deser-basic
+    container_name: deser-basic
+    ports:
+      - "127.0.0.1:8087:80"
+
+  # ---- API Security Attacks ----
+
+  api-basic:
+    build: ./api-security-attacks/api-basic
+    container_name: api-basic
+    ports:
+      - "127.0.0.1:8088:3000"
+
+  # ---- Cross-Site Request Forgery ----
+
+  csrf-basic:
+    build: ./cross-site-request-forgery/csrf-basic
+    container_name: csrf-basic
+    ports:
+      - "127.0.0.1:8089:80"
+
+  # ---- Clickjacking ----
+
+  clickjacking-target:
+    build: ./clickjacking/clickjacking-basic/target
+    container_name: clickjacking-target
+    ports:
+      - "127.0.0.1:8090:80"
+
+  clickjacking-attacker:
+    build: ./clickjacking/clickjacking-basic/attacker
+    container_name: clickjacking-attacker
+    ports:
+      - "127.0.0.1:8091:80"
+
+  # ---- Application-Layer DoS ----
+
+  dos-basic:
+    build: ./application-layer-dos/dos-basic
+    container_name: dos-basic
+    ports:
+      - "127.0.0.1:8092:80"
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    pids_limit: 200
+
 volumes:
   sqli-basic-webroot:
   xss-basic-webroot:

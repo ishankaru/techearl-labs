@@ -32,4 +32,22 @@ layout_open('upload-basic');
   <p><small class="note">Lands in <code>/uploads/double-ext/</code>.</small></p>
 </div>
 
+<div class="card">
+  <h2><a href="/upload-imgproc.php">/upload-imgproc.php</a></h2>
+  <p>Magic-byte check via libmagic (must report <code>image/*</code>), then hands the file to ImageMagick's <code>identify</code> binary. A real JPEG with PHP in EXIF metadata passes the magic-byte check; an ImageMagick MVG/MSL payload can reach <code>identify</code>; the stored file can be triggered via <code>/view.php</code>.</p>
+  <p><small class="note">Lands in <code>/uploads/imgproc/</code>.</small></p>
+</div>
+
+<div class="card">
+  <h2><a href="/view.php">/view.php</a></h2>
+  <p>Renders an uploaded image by <code>include()</code>-ing it. The trust failure: PHP scans the included file for <code>&lt;?php</code> and executes whatever it finds, so an EXIF-embedded payload in a real JPEG becomes RCE.</p>
+  <p><small class="note">Pass <code>?img=&lt;filename&gt;</code>. Constrained to <code>/uploads/imgproc/</code>.</small></p>
+</div>
+
+<div class="card">
+  <h2><a href="/upload-strict.php">/upload-strict.php</a> (defended reference)</h2>
+  <p>Extension allowlist plus libmagic MIME check plus full GD re-encode plus random filename plus a non-executing upload directory. Any polyglot payload is stripped by the re-encode step. Use this as the working pattern to copy.</p>
+  <p><small class="note">Lands in <code>/uploads/strict/</code>.</small></p>
+</div>
+
 <?php layout_close(); ?>

@@ -5,6 +5,15 @@ FROM php:8.2-apache
 # starting point.
 RUN a2enmod rewrite
 
+# ImageMagick + exiftool for the polyglot endpoints (/upload-imgproc.php and
+# the workflow the image-polyglot-webshell article walks). PHP-GD is bundled
+# via the gd extension so /upload-strict.php can re-encode uploads.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends imagemagick libmagickwand-dev libpng-dev libjpeg-dev libgif-dev libfreetype6-dev libexif-dev exiftool \
+    && docker-php-ext-configure gd --with-jpeg --with-freetype \
+    && docker-php-ext-install gd exif \
+    && rm -rf /var/lib/apt/lists/*
+
 # AllowOverride All on /var/www/ so the per-directory .htaccess files shipped
 # with the lab (specifically uploads/double-ext/.htaccess, which sets the unsafe
 # AddHandler) are honoured. The default php-apache image has AllowOverride None.

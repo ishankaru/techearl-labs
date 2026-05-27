@@ -1,0 +1,13 @@
+  # ---- Clickjacking ----
+
+  clickjacking-target:
+    build: ./clickjacking/clickjacking-basic/target
+    container_name: clickjacking-target
+    ports:
+      - "127.0.0.1:8090:80"
+
+  clickjacking-attacker:
+    build: ./clickjacking/clickjacking-basic/attacker
+    container_name: clickjacking-attacker
+    ports:
+      - "127.0.0.1:8091:80"

@@ -1,0 +1,12 @@
+# Merge this service block into the root docker-compose.yml under the
+# existing top-level `services:` key. Do NOT replace the root file.
+
+services:
+
+  # ---- Insecure Deserialization ----
+
+  deser-basic:
+    build: ./insecure-deserialization/deser-basic
+    container_name: deser-basic
+    ports:
+      - "127.0.0.1:8087:80"

@@ -35,6 +35,9 @@ function layout_open(string $title): void {
     echo '<a href="/upload-blacklist.php">Blacklist</a>';
     echo '<a href="/upload-mime.php">MIME</a>';
     echo '<a href="/upload-double-ext.php">Double ext</a>';
+    echo '<a href="/upload-imgproc.php">Imgproc</a>';
+    echo '<a href="/upload-strict.php">Strict</a>';
+    echo '<a href="/view.php">View</a>';
     echo '</nav>';
 }
 

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spin to win!</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; }
+  .hero { padding: 4rem 1rem; text-align: center; }
+  .hero h1 { font-size: 2.5rem; }
+  /* The framed dashboard sits on top of the decoy at near-zero opacity.
+     For lab visibility we use 0.15 so you can see the alignment while
+     iterating; switch to 0.0001 to feel the real attack. */
+  iframe {
+    position: absolute;
+    top: 220px; left: 50%;
+    width: 520px; height: 380px;
+    margin-left: -260px;
+    opacity: 0.15;
+    z-index: 10;
+    border: 0;
+  }
+  .decoy {
+    position: absolute;
+    /* Aligned with the "Delete account" button inside the framed dashboard. */
+    top: 520px; left: 50%;
+    transform: translateX(-50%);
+    background: #2980b9; color: #fff;
+    border: 0; padding: 1rem 2.5rem; font-size: 1.25rem;
+    border-radius: 6px; cursor: pointer;
+    z-index: 5;
+  }
+  .panel { padding: 1rem; background: #fff8e1; border-top: 1px solid #f0c040; position: absolute; top: 0; left: 0; right: 0; }
+  .panel code { background: #fff; padding: .1rem .3rem; }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <strong>Lab marker:</strong> iframe opacity set to 0.15 so the alignment is visible. In a real attack this is 0.0001 or 0. Move your mouse over the blue SPIN button &mdash; the click lands on the Delete account button inside the framed dashboard at <code>http://localhost:8090/dashboard</code>.
+  </div>
+
+  <div class="hero" style="margin-top: 5rem;">
+    <h1>&#127918; Spin to win!</h1>
+    <p>Click the button to claim a free iPhone.</p>
+  </div>
+
+  <button class="decoy">SPIN</button>
+
+  <iframe src="http://localhost:8090/dashboard"></iframe>
+</body>
+</html>

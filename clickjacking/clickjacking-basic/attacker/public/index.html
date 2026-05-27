@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>clickjacking-attacker</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  h1 { margin-bottom: .25rem; }
+  ul { line-height: 1.7; }
+  code { background: #f4f4f4; padding: .1rem .3rem; border-radius: 3px; }
+  .note { color: #666; font-size: .9rem; }
+</style>
+</head>
+<body>
+  <h1>clickjacking-attacker</h1>
+  <p class="note">Attacker-controlled origin on port 8091. Hosts the PoC pages that frame the victim app at <code>http://localhost:8090</code>.</p>
+
+  <h2>Reproduction</h2>
+  <ol>
+    <li>Sign in at <a href="http://localhost:8090/login" target="_blank" rel="noopener">http://localhost:8090/login</a> to set a session on the target origin.</li>
+    <li>Open one of the attacker PoCs below in the same browser profile.</li>
+    <li>Click as instructed. Return to the target dashboard and observe the &ldquo;Your account was just deleted&rdquo; banner.</li>
+  </ol>
+
+  <h2>PoCs</h2>
+  <ul>
+    <li><a href="/classic.html">/classic.html</a> &mdash; transparent iframe over a decoy button (classical clickjacking)</li>
+    <li><a href="/cursor-jacking.html">/cursor-jacking.html</a> &mdash; fake cursor offset; the rendered cursor lies about the click position</li>
+    <li><a href="/double-clickjacking.html">/double-clickjacking.html</a> &mdash; Paulos Yibelo 2024 variant using <code>window.open</code> + focus race (no iframe)</li>
+  </ul>
+
+  <h2>Defended reference</h2>
+  <p>Each PoC also frames or opens <code>/protected/dashboard</code> for comparison. The browser refuses to render that route inside a frame because the response carries <code>X-Frame-Options: DENY</code> and <code>Content-Security-Policy: frame-ancestors 'none'</code>.</p>
+</body>
+</html>

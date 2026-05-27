@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# Friendly URLs. /dashboard -> /dashboard.php, /protected/dashboard ->
+# /protected/dashboard.php, etc. We do not let mod_rewrite touch files
+# that already exist (so .css, images, etc. still serve directly), and
+# we explicitly avoid appending .php twice.
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^login$              login.php          [L]
+RewriteRule ^dashboard$          dashboard.php      [L]
+RewriteRule ^confirm$            confirm.php        [L]
+RewriteRule ^protected/dashboard$ protected/dashboard.php [L]
