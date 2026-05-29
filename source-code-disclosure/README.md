@@ -131,6 +131,16 @@ to test. Running them against third-party systems without authorisation may
 constitute unauthorised access under your jurisdiction's computer-misuse
 laws.
 
+The four scripts set descriptive `User-Agent` headers
+(`git-exposure-checker/1.0` and `git-dumper-edu/1.0`, each pointing at
+the companion article). This makes log triage easy for defenders running
+the scripts against their own portfolios and is the right default for
+educational tools. It does mean a scan with the default UA will show up
+plainly in any target WAF / access log: a useful audit trail when you
+have authorisation, a clear tell when you don't. If you are running a
+bug-bounty engagement that requires a specific scoping identifier,
+overwrite the UA in the script before you run it.
+
 ## License
 
 MIT, same as the rest of the techearl-labs repo. See the top-level
