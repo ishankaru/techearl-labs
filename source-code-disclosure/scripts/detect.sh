@@ -28,19 +28,26 @@ fi
 TARGET="${1%/}"
 UA="git-exposure-checker/1.0 (+https://techearl.com/exposed-git-directory-attack)"
 
+# Per-invocation tempdir avoids the predictable /tmp/_check.$$ race documented
+# in the original script. Mode 700, owned by the running user, cleaned on exit.
+TMP=$(mktemp -d -t git-exposure-checker.XXXXXX) || {
+  echo "mktemp failed; cannot create scratch directory" >&2
+  exit 2
+}
+trap 'rm -rf "$TMP"' EXIT
+
 check_url() {
   local path="$1"
   local pattern="$2"
   local url="${TARGET}${path}"
+  local out="${TMP}/check"
 
   local body status
-  body=$(curl -sS -A "$UA" --max-time 10 -o /tmp/_check.$$ -w "%{http_code}" "$url") || {
+  status=$(curl -sS -A "$UA" --max-time 10 -o "$out" -w "%{http_code}" "$url") || {
     echo "  $path — request failed"
     return 1
   }
-  status="$body"
-  body=$(cat /tmp/_check.$$ 2>/dev/null || true)
-  rm -f /tmp/_check.$$
+  body=$(cat "$out" 2>/dev/null || true)
 
   if [[ "$status" == "200" ]] && [[ "$body" =~ $pattern ]]; then
     echo "  $path — HTTP 200, matches /$pattern/  [EXPOSED]"
